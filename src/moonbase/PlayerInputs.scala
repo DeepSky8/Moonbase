@@ -1,5 +1,7 @@
 package moonbase
 
+import scala.io.StdIn._
+
 object PlayerInputs {
   def getName: String = {
 

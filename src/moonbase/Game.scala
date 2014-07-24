@@ -122,7 +122,6 @@ object BuildGameAction extends GameAction {
     }
   }
 }
-
 object UpgradeGameAction extends GameAction {
   def execute(gameState: GameState): GameState = gameState match {
     case Upgrade(SavedGame(name, moonbase)) => {
@@ -142,6 +141,7 @@ object DigGameAction extends GameAction {
 
 
 def main(args: Array[String]): Unit = {
+println(PlayerInputs.getName)
 
 GameLoop(Start)
 
