@@ -60,7 +60,7 @@ object OrientationGameAction extends GameAction {
 object NewGameGameAction extends GameAction {
   def execute(gameState: GameState): GameState = gameState match {
     case NewGame(name) => {
-      NormalTurn(SavedGame(name, new Moonbase(List(1, 0), 50))
+      NormalTurn(SavedGame(name, new Moonbase(List(val level: 1, val troops: 0), 50)))
     }
   }
 }
