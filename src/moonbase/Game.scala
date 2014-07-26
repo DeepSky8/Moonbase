@@ -1,27 +1,25 @@
 package moonbase
 
 object Game {
-  
-//  Moonbase - story 1
+
+// Moonbase - story 1
 
 def gameLoop(gameState: GameState): Unit = gameState match {
-    case Start => gameLoop(StartGameAction.execute(Start))
-    case o: Orientation => gameLoop(OrientationGameAction.execute(o))
-    case n: NewGame => gameLoop(NewGameGameAction.execute(n))
-    case c: CreateNewGame => gameLoop(RefresherGameAction.execute(c))
-    case t: NormalTurn => gameLoop(NormalTurnGameAction.execute(t))
-    case b: Build => gameLoop(BuildGameAction.execute(b))
-    case u: Upgrade => gameLoop(UpgradeGameAction.execute(u))
-    case d: Dig => gameLoop(DigGameAction.execute(d))
-    case End => println()
-  }
+  case Start => gameLoop(StartGameAction.execute(Start))
+  case o: Orientation => gameLoop(OrientationGameAction.execute(o))
+  case n: NewGame => gameLoop(NewGameGameAction.execute(n))
+  case c: CreateNewGame => gameLoop(RefresherGameAction.execute(c))
+  case t: NormalTurn => gameLoop(NormalTurnGameAction.execute(t))
+  case b: Build => gameLoop(BuildGameAction.execute(b))
+  case u: Upgrade => gameLoop(UpgradeGameAction.execute(u))
+  case d: Dig => gameLoop(DigGameAction.execute(d))
+  case i: Summary => gameLoop(SummaryGameAction.execute(i))
+  case End => println()
+}
 
 case class SavedGame(val name: String, val moonbase: Moonbase)
-
 case class Moonbase(val bases: List[Base], val resources: Int)
-
 case class Base(val level: Int, val troops: Int)
-
 
 abstract class GameAction {
   def execute(gameState: GameState): GameState {
@@ -38,7 +36,7 @@ sealed class GameState
   case class Build(savedGame: SavedGame) extends GameState
   case class Upgrade(savedGame: SavedGame) extends GameState
   case class Dig(savedGame: SavedGame) extends GameState
-  case class Income(savedGame: SavedGame) extends GameState
+  case class Summary(savedGame: SavedGame) extends GameState
   case object End extends GameState
 
 object StartGameAction extends GameAction {
@@ -69,7 +67,7 @@ object OrientationGameAction extends GameAction {
 object NewGameGameAction extends GameAction {
   def execute(gameState: GameState): GameState = gameState match {
     case NewGame(name) => {
-      CreateNewGame(name, new Moonbase(List((1, 0)), 50))
+      CreateNewGame(name, new Moonbase(Tuple2((1, 0)), 50))
     }
   }
 }
@@ -91,10 +89,9 @@ object RefresherGameAction extends GameAction {
   }
 }
 
-
 object NormalTurnGameAction extends GameAction {
   def execute(gameState: GameState): GameState = gameState match {
-    case NormalTurn(val savedGame: SavedGame(val name, val moonbase)) => {
+    case NormalTurn(val savedGame(name, moonbase)) => {
       println()
       println("It's a new day. You have " + NormalTurn.savedGame.moonbase.bases.size + " functioning bases.")
       println("Your bases and working unit have produced a total of " + moonbase.resources + " usable building material.")
@@ -104,12 +101,12 @@ object NormalTurnGameAction extends GameAction {
       println("If you do not have enough units of building material to construct or upgrade, you can instruct your work unit to keep digging for today.")
       println()
       println("Which command will you give for today? Build, Upgrade, or Dig?")
-     val today = readline()
+      val today = readLine()
       today.toLowerCase match {
-        case build => Build(SavedGame)
+        case build => Build(savedGame)
         case upgrade => Upgrade(SavedGame)
         case dig => Dig(SavedGame)
-        case _ => NormalTurn(SavedGame)
+        case _ => Refresher(SavedGame)
       }
     }
   }
@@ -118,14 +115,15 @@ object NormalTurnGameAction extends GameAction {
 object BuildGameAction extends GameAction {
   def execute(gameState: GameState): GameState = gameState match {
     case Build(SavedGame(name, moonbase)) => {
-      Income(SavedGame(name, (BaseOptions.addBase(moonbase))))     
+      Summary(SavedGame(name, (BaseOptions.addBase(moonbase)))) 
     }
   }
 }
+
 object UpgradeGameAction extends GameAction {
   def execute(gameState: GameState): GameState = gameState match {
     case Upgrade(SavedGame(name, moonbase)) => {
-      Income(SavedGame(name, (BaseOptions.upgradeMoonbase(moonbase)))) 
+      Summary(SavedGame(name, (BaseOptions.upgradeMoonbase(moonbase)))) 
     }
   }
 }
@@ -133,76 +131,83 @@ object UpgradeGameAction extends GameAction {
 object DigGameAction extends GameAction {
   def execute(gameState: GameState): GameState = gameState match {
     case Dig(SavedGame(name, moonbase)) => {
-      Income(SavedGame(name, (BaseOptions.dig(moonbase))))
+      Summary(SavedGame(name, (BaseOptions.dig(moonbase))))
+    }
+  }
+}
+
+object SummaryGameAction extends GameAction {
+  def execute(gameState: GameState): GameState = gameState match {
+    case Summary(SavedGame(name, moonbase)) => {
+      val baseProduction = Moonbase.BaseOptions.calculateIncome(Summary)
+      println("Today's work is done, " + name + ".")
+      println("Your bases have collected " + baseProduction + " resources today.")
+      println("Your new resource total is " + (baseProduction + income.SavedGame.moonbase.resources) + ".") 
+      NormalTurn(name, (moonbase.resources + baseProduction))
     }
   }
 }
 
 
-
-def main(args: Array[String]): Unit = {
-println(PlayerInputs.getName)
-
-GameLoop(Start)
-
-
-  }
+def main(args: Array[String]): Unit = {  
+  gameLoop(Start)
+ }
 }
 
 //
 //abstract class GameAction {
-//    def execute(gameState: GameState): GameState
-//  }
+// def execute(gameState: GameState): GameState
+// }
 // 
 //sealed trait GameState
-//  case object Start extends GameState
-//  case class StartAgain(stake: Int) extends GameState
-//  case class Wager(stake: Int) extends GameState
-//  case class CallFlip(stake: Int, bet: Int) extends GameState
-//  case class Results(list: (Boolean,Boolean, Int)) extends GameState
-//  case object End extends GameState
+// case object Start extends GameState
+// case class StartAgain(stake: Int) extends GameState
+// case class Wager(stake: Int) extends GameState
+// case class CallFlip(stake: Int, bet: Int) extends GameState
+// case class Results(list: (Boolean,Boolean, Int)) extends GameState
+// case object End extends GameState
 // 
-//  object StartGameAction extends GameAction {
-//    def execute(gameState: GameState): GameState = {
-//      println(ready)
-//      val input = readLine()
-//      input.toLowerCase match {
-//        case "yes" => Wager(500)
-//        case "no" => End
-//        case _ => StartAgain(500)
-//      }
-//    }
-//  }
+// object StartGameAction extends GameAction {
+// def execute(gameState: GameState): GameState = {
+// println(ready)
+// val input = readLine()
+// input.toLowerCase match {
+// case "yes" => Wager(500)
+// case "no" => End
+// case _ => StartAgain(500)
+// }
+// }
+// }
 //
 // 
 //def gameLoop(gameState: GameState): Unit = gameState match {
-//    case Start => gameLoop(StartGameAction.execute(Start))
-//    case s: StartAgain => gameLoop(StartAgainGameAction.execute(s))
-//    case w: Wager => gameLoop(WagerGameAction.execute(w))
-//    case c: CallFlip => gameLoop(CallFlipGameAction.execute(c))
-//    case r: Results => gameLoop(ResultsGameAction.execute(r))
-//    case End => println(leave)
-//  }
+// case Start => gameLoop(StartGameAction.execute(Start))
+// case s: StartAgain => gameLoop(StartAgainGameAction.execute(s))
+// case w: Wager => gameLoop(WagerGameAction.execute(w))
+// case c: CallFlip => gameLoop(CallFlipGameAction.execute(c))
+// case r: Results => gameLoop(ResultsGameAction.execute(r))
+// case End => println(leave)
+// }
 //
 //
 //
-//  object WagerGameAction extends GameAction {
-//    def execute(gameState: GameState): GameState = gameState match {
-//      case Wager(stake) => {
-//        println(wagers)
-//        print(increments25)
-//        print(increments25ForYou)
-//        val betVal = readLine()
-//        val realBet = confirm(scala.math.abs(betVal.toInt))
-//        if (!afford(realBet, stake)) {
-//          println("You don't have enough credits to back that bet. You have " + stake + " credits. ")
-//          Wager(stake)
-//        } else {
-//          CallFlip(stake, realBet)
-//        }
-//      }
-//      case _ => Start
-//    }
-//  }
+// object WagerGameAction extends GameAction {
+// def execute(gameState: GameState): GameState = gameState match {
+// case Wager(stake) => {
+// println(wagers)
+// print(increments25)
+// print(increments25ForYou)
+// val betVal = readLine()
+// val realBet = confirm(scala.math.abs(betVal.toInt))
+// if (!afford(realBet, stake)) {
+// println("You don't have enough credits to back that bet. You have " + stake + " credits. ")
+// Wager(stake)
+// } else {
+// CallFlip(stake, realBet)
+// }
+// }
+// case _ => Start
+// }
+// }
 // 
 //}
